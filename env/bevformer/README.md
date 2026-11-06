@@ -22,7 +22,7 @@ the original environment and is used as a pip constraints file.
 ```bash
 docker build -t robogeo-bevformer env/bevformer        # from the repository root
 docker run --gpus all --shm-size=16g -it \
-    -v $PWD:/workspace/RoboGeo2027 -w /workspace/RoboGeo2027 \
+    -v $PWD:/workspace/RoboGeo -w /workspace/RoboGeo \
     -v $ROBOGEO_DATA:$ROBOGEO_DATA:ro -e ROBOGEO_DATA \
     -v $ROBOGEO_CKPT:$ROBOGEO_CKPT:ro -e ROBOGEO_CKPT \
     robogeo-bevformer

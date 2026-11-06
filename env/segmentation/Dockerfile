@@ -15,9 +15,9 @@ RUN apt-get update \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/RoboGeo2027
+WORKDIR /workspace/RoboGeo
 COPY env/segmentation env/segmentation
 COPY segmentation segmentation
 RUN TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST" bash env/segmentation/install.sh $([ "$CVT_ONLY" = 1 ] && echo --cvt-only)
 
-WORKDIR /workspace/RoboGeo2027/segmentation
+WORKDIR /workspace/RoboGeo/segmentation

@@ -14,8 +14,8 @@ All environments use Python 3.10.
 ## Docker (recommended)
 
 ```bash
-git clone https://github.com/shdragron/RoboGeo2027.git
-cd RoboGeo2027
+git clone https://github.com/shdragron/RoboGeo.git
+cd RoboGeo
 
 docker build -t robogeo-bevformer env/bevformer
 docker build -t robogeo-cape env/cape
@@ -30,7 +30,7 @@ Start a container with the repository, the data and the checkpoints mounted
 
 ```bash
 docker run --gpus all --shm-size=16g -it \
-    -v $PWD:/workspace/RoboGeo2027 -w /workspace/RoboGeo2027 \
+    -v $PWD:/workspace/RoboGeo -w /workspace/RoboGeo \
     -v $ROBOGEO_DATA:$ROBOGEO_DATA:ro -e ROBOGEO_DATA \
     -v $ROBOGEO_CKPT:$ROBOGEO_CKPT:ro -e ROBOGEO_CKPT \
     robogeo-bevformer    # or robogeo-cape, robogeo-seg

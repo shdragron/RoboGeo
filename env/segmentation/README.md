@@ -9,7 +9,7 @@ Python 3.10, PyTorch 2.11 (CUDA 12.8), PyTorch Lightning 2.1.0 and Hydra 1.3.2, 
 ```bash
 docker build -t robogeo-seg -f env/segmentation/Dockerfile .   # from the repository root
 docker run --gpus all --shm-size=16g -it \
-    -v $PWD:/workspace/RoboGeo2027 -w /workspace/RoboGeo2027 \
+    -v $PWD:/workspace/RoboGeo -w /workspace/RoboGeo \
     -v $ROBOGEO_DATA:$ROBOGEO_DATA:ro -e ROBOGEO_DATA \
     -v $ROBOGEO_CKPT:$ROBOGEO_CKPT:ro -e ROBOGEO_CKPT \
     robogeo-seg

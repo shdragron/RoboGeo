@@ -10,7 +10,7 @@ mmsegmentation 0.30.0, mmdet3d 1.0.0rc6 and nuscenes-devkit 1.1.10, for
 ```bash
 docker build -t robogeo-cape env/cape    # --build-arg TORCH_CUDA_ARCH_LIST="8.9": one GPU architecture only
 docker run --gpus all --shm-size=16g -it \
-    -v $PWD:/workspace/RoboGeo2027 -w /workspace/RoboGeo2027 \
+    -v $PWD:/workspace/RoboGeo -w /workspace/RoboGeo \
     -v $ROBOGEO_DATA:$ROBOGEO_DATA:ro -e ROBOGEO_DATA \
     -v $ROBOGEO_CKPT:$ROBOGEO_CKPT:ro -e ROBOGEO_CKPT \
     robogeo-cape
