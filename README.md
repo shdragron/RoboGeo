@@ -88,7 +88,7 @@ IMG is the primary condition of viewpoint perturbation and CAL that of cross-pla
 - [x] Evaluation code for viewpoint perturbation (mVRS) and cross-platform transfer (CTS)
 - [x] Training code for BEVFormer, CAPE, GaussianLSS and CVT
 - [x] [Checkpoints](https://huggingface.co/shdragron/RoboGeo-checkpoints) of BEVFormer, CAPE, GaussianLSS and CVT for the Sedan, SUV and Bus
-- [ ] Code and checkpoints of BEVDet, BEVDepth, DFA3D and DETR3D (3D object detection) and LSS, PointBeV, LaRa and DSPE (BEV segmentation)
+- [ ] Code and checkpoints of BEVDet, BEVDepth, DFA3D and DETR3D (3D object detection) and LSS, PointBeV and LaRa (BEV segmentation)
 
 ## Getting started
 
