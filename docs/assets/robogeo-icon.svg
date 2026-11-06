@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .sway { transform-origin: 32px 54px; animation: sway 3.6s ease-in-out infinite; }
+    @keyframes sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-14deg); } }
+    @media (prefers-reduced-motion: reduce) { .sway { animation: none; } }
+  </style>
+  <rect width="64" height="64" rx="12" fill="#1e293b"/>
+  <path d="M32 54 L6.8 26.54 A37.3 37.3 0 0 1 37.64 17.17 Z" fill="#3b82f6"/>
+  <path class="sway" d="M32 54 L25.97 17.23 A37.3 37.3 0 0 1 57.2 26.54 Z" fill="#d97706" fill-opacity=".85"/>
+  <circle cx="32" cy="54" r="4.6" fill="#f1f5f9"/>
+  <circle cx="32" cy="54" r="1.8" fill="#1e293b"/>
+</svg>

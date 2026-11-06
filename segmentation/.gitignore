@@ -1,0 +1,5 @@
+# run outputs
+/logs/
+/outputs/
+/eval_results/
+__pycache__/

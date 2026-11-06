@@ -1,0 +1,5 @@
+# local data link and run outputs
+data/
+work_dirs/
+test/
+out/

@@ -1,0 +1,31 @@
+# RoboGeo data. Set the root with ROBOGEO_DATA or data.root=<path>; it holds carla_geobev/,
+# carla_geobev_labels/ and carla_VR/.
+root: ${oc.env:ROBOGEO_DATA}
+platform: sedan                      # sedan | suv | bus: training platform and evaluation platform of 'normal'
+
+dataset_dir: ${data.root}/carla_geobev
+labels_root: ${data.root}/carla_geobev_labels
+labels_dir: ${data.labels_root}/${data.platform}              # training split labels
+val_labels_dir: ${data.labels_root}/${data.platform}_eval     # evaluation split labels
+vr_root: ${data.root}/carla_VR       # viewpoint perturbation renders
+viewpoint_metadata_path: ${data.vr_root}/viewpoint_metadata.json
+
+# 200x200 BEV grid over +-50 m (0.5 m per cell)
+bev:
+  h: 200
+  w: 200
+  h_meters: 100.0
+  w_meters: 100.0
+  offset: 0.0
+
+# input images: resized to (h + top_crop) x w, then the top rows are cropped
+image:
+  h: 224
+  w: 480
+  top_crop: 46
+
+# the label images hold 12 classes; vehicle = union of these classes
+num_classes: 12
+label_indices: [[4, 5, 6, 7, 8, 10, 11]]
+
+split_intrin_extrin: False           # True: the batch also carries intrinsics and extrinsics (CVT)

@@ -1,0 +1,18 @@
+# GaussianLSS loss: focal segmentation + center heatmap (MSE) + center offset (L1).
+center_weight: 2.0
+center:
+  _target_: GaussianLSS.losses.CenterLoss
+  min_visibility: ${min_visibility}
+  key: ${key}
+
+offset_weight: 0.1
+offset:
+  _target_: GaussianLSS.losses.OffsetLoss
+  min_visibility: ${min_visibility}
+  key: ${key}
+
+bev_weight: 1.0
+bev:
+  _target_: GaussianLSS.losses.BinarySegmentationLoss
+  min_visibility: ${min_visibility}
+  key: ${key}

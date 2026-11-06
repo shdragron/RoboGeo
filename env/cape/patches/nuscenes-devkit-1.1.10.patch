@@ -1,0 +1,12 @@
+--- a/nuscenes/eval/detection/data_classes.py
++++ b/nuscenes/eval/detection/data_classes.py
+@@ -36,7 +36,8 @@
+         self.max_boxes_per_sample = max_boxes_per_sample
+         self.mean_ap_weight = mean_ap_weight
+ 
+-        self.class_names = self.class_range.keys()
++        # RoboGeo: a list instead of a dict_keys view, which cannot be pickled
++        self.class_names = list(self.class_range.keys())
+ 
+     def __eq__(self, other):
+         eq = True

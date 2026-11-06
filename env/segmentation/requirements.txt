@@ -1,0 +1,15 @@
+# RoboGeo BEV segmentation (GaussianLSS, CVT): direct dependencies, Python 3.10.
+# torch and torchvision come from the PyTorch CUDA 12.8 index:
+#   pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+# requirements.lock.txt pins the full environment the released checkpoints were verified with.
+pytorch-lightning==2.1.0
+torchmetrics==1.9.0
+hydra-core==1.3.2
+omegaconf==2.3.0
+efficientnet_pytorch==0.7.1
+fvcore==0.1.5.post20210825
+einops==0.3.2
+numpy==1.26.4
+pillow==10.2.0
+pyquaternion==0.9.9
+tqdm==4.67.3

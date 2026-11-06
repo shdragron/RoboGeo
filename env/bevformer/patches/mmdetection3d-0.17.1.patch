@@ -1,0 +1,588 @@
+diff --git a/mmdet3d/__init__.py b/mmdet3d/__init__.py
+index ee89aa5..afee10c 100644
+--- a/mmdet3d/__init__.py
++++ b/mmdet3d/__init__.py
+@@ -19,7 +19,8 @@ def digit_version(version_str):
+ 
+ 
+ mmcv_minimum_version = '1.3.8'
+-mmcv_maximum_version = '1.4.0'
++# RoboGeo: env ships mmcv 1.7.1
++mmcv_maximum_version = '1.99.0'
+ mmcv_version = digit_version(mmcv.__version__)
+ 
+ 
+diff --git a/mmdet3d/apis/inference.py b/mmdet3d/apis/inference.py
+index 3af7153..d76e7a9 100644
+--- a/mmdet3d/apis/inference.py
++++ b/mmdet3d/apis/inference.py
+@@ -351,7 +351,7 @@ def show_seg_result_meshlab(data,
+         # generate random color map
+         max_idx = pred_seg.max()
+         palette = np.random.randint(0, 256, size=(max_idx + 1, 3))
+-    palette = np.array(palette).astype(np.int)
++    palette = np.array(palette).astype(np.int64)
+ 
+     show_seg_result(
+         points,
+diff --git a/mmdet3d/core/evaluation/seg_eval.py b/mmdet3d/core/evaluation/seg_eval.py
+index ab26de0..b95050c 100644
+--- a/mmdet3d/core/evaluation/seg_eval.py
++++ b/mmdet3d/core/evaluation/seg_eval.py
+@@ -88,8 +88,8 @@ def seg_eval(gt_labels, seg_preds, label2cat, ignore_index, logger=None):
+ 
+     hist_list = []
+     for i in range(len(gt_labels)):
+-        gt_seg = gt_labels[i].clone().numpy().astype(np.int)
+-        pred_seg = seg_preds[i].clone().numpy().astype(np.int)
++        gt_seg = gt_labels[i].clone().numpy().astype(np.int64)
++        pred_seg = seg_preds[i].clone().numpy().astype(np.int64)
+ 
+         # filter out ignored points
+         pred_seg[gt_seg == ignore_index] = -1
+diff --git a/mmdet3d/core/visualizer/image_vis.py b/mmdet3d/core/visualizer/image_vis.py
+index 891fb54..be1ceff 100644
+--- a/mmdet3d/core/visualizer/image_vis.py
++++ b/mmdet3d/core/visualizer/image_vis.py
+@@ -75,7 +75,7 @@ def plot_rect3d_on_img(img,
+     line_indices = ((0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (3, 2), (3, 7),
+                     (4, 5), (4, 7), (2, 6), (5, 6), (6, 7))
+     for i in range(num_rects):
+-        corners = rect_corners[i].astype(np.int)
++        corners = rect_corners[i].astype(np.int64)
+         for start, end in line_indices:
+             cv2.line(img, (corners[start, 0], corners[start, 1]),
+                      (corners[end, 0], corners[end, 1]), color, thickness,
+diff --git a/mmdet3d/core/visualizer/open3d_vis.py b/mmdet3d/core/visualizer/open3d_vis.py
+index 0790ee4..0149052 100644
+--- a/mmdet3d/core/visualizer/open3d_vis.py
++++ b/mmdet3d/core/visualizer/open3d_vis.py
+@@ -243,7 +243,7 @@ def _draw_bboxes_ind(bbox3d,
+ 
+         # change the color of points which are in box
+         if pcd is not None and mode == 'xyz':
+-            points_colors[indices[:, i].astype(np.bool)] = in_box_color
++            points_colors[indices[:, i].astype(bool)] = in_box_color
+ 
+     # update points colors
+     if pcd is not None:
+diff --git a/mmdet3d/datasets/pipelines/data_augment_utils.py b/mmdet3d/datasets/pipelines/data_augment_utils.py
+index 23b6aad..744bc3a 100644
+--- a/mmdet3d/datasets/pipelines/data_augment_utils.py
++++ b/mmdet3d/datasets/pipelines/data_augment_utils.py
+@@ -2,7 +2,8 @@
+ import numba
+ import numpy as np
+ import warnings
+-from numba.errors import NumbaPerformanceWarning
++# RoboGeo: numba>=0.50 moved errors to numba.core.errors
++from numba.core.errors import NumbaPerformanceWarning
+ 
+ from mmdet3d.core.bbox import box_np_ops
+ 
+diff --git a/mmdet3d/datasets/pipelines/dbsampler.py b/mmdet3d/datasets/pipelines/dbsampler.py
+index 8a24555..e28654e 100644
+--- a/mmdet3d/datasets/pipelines/dbsampler.py
++++ b/mmdet3d/datasets/pipelines/dbsampler.py
+@@ -262,7 +262,7 @@ class DataBaseSampler(object):
+                 s_points_list.append(s_points)
+ 
+             gt_labels = np.array([self.cat2label[s['name']] for s in sampled],
+-                                 dtype=np.long)
++                                 dtype=np.int64)
+             ret = {
+                 'gt_labels_3d':
+                 gt_labels,
+diff --git a/mmdet3d/datasets/pipelines/loading.py b/mmdet3d/datasets/pipelines/loading.py
+index 58f5a86..2edd791 100644
+--- a/mmdet3d/datasets/pipelines/loading.py
++++ b/mmdet3d/datasets/pipelines/loading.py
+@@ -257,7 +257,7 @@ class PointSegClassMapping(object):
+         # build cat_id to class index mapping
+         neg_cls = len(valid_cat_ids)
+         self.cat_id2class = np.ones(
+-            self.max_cat_id + 1, dtype=np.int) * neg_cls
++            self.max_cat_id + 1, dtype=np.int64) * neg_cls
+         for cls_idx, cat_id in enumerate(valid_cat_ids):
+             self.cat_id2class[cat_id] = cls_idx
+ 
+@@ -584,11 +584,11 @@ class LoadAnnotations3D(LoadAnnotations):
+             self.file_client = mmcv.FileClient(**self.file_client_args)
+         try:
+             mask_bytes = self.file_client.get(pts_instance_mask_path)
+-            pts_instance_mask = np.frombuffer(mask_bytes, dtype=np.int)
++            pts_instance_mask = np.frombuffer(mask_bytes, dtype=np.int64)
+         except ConnectionError:
+             mmcv.check_file_exist(pts_instance_mask_path)
+             pts_instance_mask = np.fromfile(
+-                pts_instance_mask_path, dtype=np.long)
++                pts_instance_mask_path, dtype=np.int64)
+ 
+         results['pts_instance_mask'] = pts_instance_mask
+         results['pts_mask_fields'].append('pts_instance_mask')
+@@ -615,7 +615,7 @@ class LoadAnnotations3D(LoadAnnotations):
+         except ConnectionError:
+             mmcv.check_file_exist(pts_semantic_mask_path)
+             pts_semantic_mask = np.fromfile(
+-                pts_semantic_mask_path, dtype=np.long)
++                pts_semantic_mask_path, dtype=np.int64)
+ 
+         results['pts_semantic_mask'] = pts_semantic_mask
+         results['pts_seg_fields'].append('pts_semantic_mask')
+diff --git a/mmdet3d/datasets/pipelines/transforms_3d.py b/mmdet3d/datasets/pipelines/transforms_3d.py
+index 388b853..81a11c1 100644
+--- a/mmdet3d/datasets/pipelines/transforms_3d.py
++++ b/mmdet3d/datasets/pipelines/transforms_3d.py
+@@ -337,7 +337,7 @@ class ObjectSample(object):
+                 input_dict['img'] = sampled_dict['img']
+ 
+         input_dict['gt_bboxes_3d'] = gt_bboxes_3d
+-        input_dict['gt_labels_3d'] = gt_labels_3d.astype(np.long)
++        input_dict['gt_labels_3d'] = gt_labels_3d.astype(np.int64)
+         input_dict['points'] = points
+ 
+         return input_dict
+@@ -739,7 +739,7 @@ class ObjectRangeFilter(object):
+         # using mask to index gt_labels_3d will cause bug when
+         # len(gt_labels_3d) == 1, where mask=1 will be interpreted
+         # as gt_labels_3d[1] and cause out of index error
+-        gt_labels_3d = gt_labels_3d[mask.numpy().astype(np.bool)]
++        gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
+ 
+         # limit rad to [-pi, pi]
+         gt_bboxes_3d.limit_yaw(offset=0.5, period=2 * np.pi)
+diff --git a/mmdet3d/datasets/s3dis_dataset.py b/mmdet3d/datasets/s3dis_dataset.py
+index 0955fb7..6e8c9e9 100644
+--- a/mmdet3d/datasets/s3dis_dataset.py
++++ b/mmdet3d/datasets/s3dis_dataset.py
+@@ -84,10 +84,10 @@ class S3DISDataset(Custom3DDataset):
+         if info['annos']['gt_num'] != 0:
+             gt_bboxes_3d = info['annos']['gt_boxes_upright_depth'].astype(
+                 np.float32)  # k, 6
+-            gt_labels_3d = info['annos']['class'].astype(np.long)
++            gt_labels_3d = info['annos']['class'].astype(np.int64)
+         else:
+             gt_bboxes_3d = np.zeros((0, 6), dtype=np.float32)
+-            gt_labels_3d = np.zeros((0, ), dtype=np.long)
++            gt_labels_3d = np.zeros((0, ), dtype=np.int64)
+ 
+         # to target box structure
+         gt_bboxes_3d = DepthInstance3DBoxes(
+diff --git a/mmdet3d/datasets/scannet_dataset.py b/mmdet3d/datasets/scannet_dataset.py
+index 7d15b0b..42d9ee0 100644
+--- a/mmdet3d/datasets/scannet_dataset.py
++++ b/mmdet3d/datasets/scannet_dataset.py
+@@ -142,10 +142,10 @@ class ScanNetDataset(Custom3DDataset):
+         if info['annos']['gt_num'] != 0:
+             gt_bboxes_3d = info['annos']['gt_boxes_upright_depth'].astype(
+                 np.float32)  # k, 6
+-            gt_labels_3d = info['annos']['class'].astype(np.long)
++            gt_labels_3d = info['annos']['class'].astype(np.int64)
+         else:
+             gt_bboxes_3d = np.zeros((0, 6), dtype=np.float32)
+-            gt_labels_3d = np.zeros((0, ), dtype=np.long)
++            gt_labels_3d = np.zeros((0, ), dtype=np.int64)
+ 
+         # to target box structure
+         gt_bboxes_3d = DepthInstance3DBoxes(
+@@ -443,7 +443,7 @@ class ScanNetSegDataset(Custom3DSegDataset):
+         mmcv.mkdir_or_exist(txtfile_prefix)
+ 
+         # need to map network output to original label idx
+-        pred2label = np.zeros(len(self.VALID_CLASS_IDS)).astype(np.int)
++        pred2label = np.zeros(len(self.VALID_CLASS_IDS)).astype(np.int64)
+         for original_label, output_idx in self.label_map.items():
+             if output_idx != self.ignore_index:
+                 pred2label[output_idx] = original_label
+@@ -452,7 +452,7 @@ class ScanNetSegDataset(Custom3DSegDataset):
+         for i, result in enumerate(results):
+             info = self.data_infos[i]
+             sample_idx = info['point_cloud']['lidar_idx']
+-            pred_sem_mask = result['semantic_mask'].numpy().astype(np.int)
++            pred_sem_mask = result['semantic_mask'].numpy().astype(np.int64)
+             pred_label = pred2label[pred_sem_mask]
+             curr_file = f'{txtfile_prefix}/{sample_idx}.txt'
+             np.savetxt(curr_file, pred_label, fmt='%d')
+diff --git a/mmdet3d/datasets/sunrgbd_dataset.py b/mmdet3d/datasets/sunrgbd_dataset.py
+index 7a9a7d5..ee19b1c 100644
+--- a/mmdet3d/datasets/sunrgbd_dataset.py
++++ b/mmdet3d/datasets/sunrgbd_dataset.py
+@@ -136,10 +136,10 @@ class SUNRGBDDataset(Custom3DDataset):
+         if info['annos']['gt_num'] != 0:
+             gt_bboxes_3d = info['annos']['gt_boxes_upright_depth'].astype(
+                 np.float32)  # k, 6
+-            gt_labels_3d = info['annos']['class'].astype(np.long)
++            gt_labels_3d = info['annos']['class'].astype(np.int64)
+         else:
+             gt_bboxes_3d = np.zeros((0, 7), dtype=np.float32)
+-            gt_labels_3d = np.zeros((0, ), dtype=np.long)
++            gt_labels_3d = np.zeros((0, ), dtype=np.int64)
+ 
+         # to target box structure
+         gt_bboxes_3d = DepthInstance3DBoxes(
+diff --git a/mmdet3d/ops/ball_query/src/ball_query.cpp b/mmdet3d/ops/ball_query/src/ball_query.cpp
+index 6e9d5f7..d88fda2 100644
+--- a/mmdet3d/ops/ball_query/src/ball_query.cpp
++++ b/mmdet3d/ops/ball_query/src/ball_query.cpp
+@@ -1,7 +1,8 @@
+ // Modified from
+ // https://github.com/sshaoshuai/Pointnet2.PyTorch/tree/master/pointnet2/src/ball_query.cpp
+ 
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <cuda.h>
+ #include <cuda_runtime_api.h>
+ #include <torch/extension.h>
+@@ -9,7 +10,7 @@
+ 
+ #include <vector>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ #define CHECK_CUDA(x) \
+   TORCH_CHECK(x.type().is_cuda(), #x, " must be a CUDAtensor ")
+diff --git a/mmdet3d/ops/furthest_point_sample/src/furthest_point_sample.cpp b/mmdet3d/ops/furthest_point_sample/src/furthest_point_sample.cpp
+index be05890..9bc7566 100644
+--- a/mmdet3d/ops/furthest_point_sample/src/furthest_point_sample.cpp
++++ b/mmdet3d/ops/furthest_point_sample/src/furthest_point_sample.cpp
+@@ -2,13 +2,14 @@
+ // https://github.com/sshaoshuai/Pointnet2.PyTorch/tree/master/pointnet2/src/sampling.cpp
+ 
+ #include <ATen/cuda/CUDAContext.h>
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <torch/extension.h>
+ #include <torch/serialize/tensor.h>
+ 
+ #include <vector>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ int furthest_point_sampling_wrapper(int b, int n, int m,
+                                     at::Tensor points_tensor,
+diff --git a/mmdet3d/ops/gather_points/src/gather_points.cpp b/mmdet3d/ops/gather_points/src/gather_points.cpp
+index 01a3e40..2e1843a 100644
+--- a/mmdet3d/ops/gather_points/src/gather_points.cpp
++++ b/mmdet3d/ops/gather_points/src/gather_points.cpp
+@@ -1,11 +1,12 @@
+ #include <ATen/cuda/CUDAContext.h>
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <torch/extension.h>
+ #include <torch/serialize/tensor.h>
+ 
+ #include <vector>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ int gather_points_wrapper(int b, int c, int n, int npoints,
+                           at::Tensor points_tensor, at::Tensor idx_tensor,
+diff --git a/mmdet3d/ops/group_points/src/group_points.cpp b/mmdet3d/ops/group_points/src/group_points.cpp
+index 3cd6fc8..bb3f172 100644
+--- a/mmdet3d/ops/group_points/src/group_points.cpp
++++ b/mmdet3d/ops/group_points/src/group_points.cpp
+@@ -1,7 +1,8 @@
+ // Modified from
+ // https://github.com/sshaoshuai/Pointnet2.PyTorch/tree/master/pointnet2/src/group_points.cpp
+ 
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <cuda.h>
+ #include <cuda_runtime_api.h>
+ #include <torch/extension.h>
+@@ -9,7 +10,7 @@
+ 
+ #include <vector>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ int group_points_wrapper(int b, int c, int n, int npoints, int nsample,
+                          at::Tensor points_tensor, at::Tensor idx_tensor,
+diff --git a/mmdet3d/ops/interpolate/src/interpolate.cpp b/mmdet3d/ops/interpolate/src/interpolate.cpp
+index 6382579..1ffc511 100644
+--- a/mmdet3d/ops/interpolate/src/interpolate.cpp
++++ b/mmdet3d/ops/interpolate/src/interpolate.cpp
+@@ -1,7 +1,8 @@
+ // Modified from
+ // https://github.com/sshaoshuai/Pointnet2.PyTorch/tree/master/pointnet2/src/interpolate.cpp
+ 
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <cuda.h>
+ #include <cuda_runtime_api.h>
+ #include <math.h>
+@@ -12,7 +13,7 @@
+ 
+ #include <vector>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ void three_nn_wrapper(int b, int n, int m, at::Tensor unknown_tensor,
+                       at::Tensor known_tensor, at::Tensor dist2_tensor,
+diff --git a/mmdet3d/ops/knn/src/knn.cpp b/mmdet3d/ops/knn/src/knn.cpp
+index 84ddf4b..2096376 100644
+--- a/mmdet3d/ops/knn/src/knn.cpp
++++ b/mmdet3d/ops/knn/src/knn.cpp
+@@ -3,10 +3,11 @@
+ #include <torch/serialize/tensor.h>
+ #include <torch/extension.h>
+ #include <vector>
+-#include <THC/THC.h>
++// RoboGeo: THC removed in torch>=1.13
++#include <ATen/cuda/CUDAContext.h>
+ #include <ATen/cuda/CUDAContext.h>
+ 
+-extern THCState *state;
++// RoboGeo: THCState removed (was: extern THCState *state;)
+ 
+ #define CHECK_CUDA(x) TORCH_CHECK(x.is_cuda(), #x, " must be a CUDAtensor ")
+ #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x, " must be contiguous ")
+diff --git a/mmdet3d/ops/spconv/conv.py b/mmdet3d/ops/spconv/conv.py
+index 6a38f0e..75fc01a 100644
+--- a/mmdet3d/ops/spconv/conv.py
++++ b/mmdet3d/ops/spconv/conv.py
+@@ -204,7 +204,9 @@ class SparseConvolution(SparseModule):
+         return out_tensor
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseConv2d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -230,7 +232,9 @@ class SparseConv2d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseConv3d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -256,7 +260,9 @@ class SparseConv3d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseConv4d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -282,7 +288,9 @@ class SparseConv4d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseConvTranspose2d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -309,7 +317,9 @@ class SparseConvTranspose2d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseConvTranspose3d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -336,7 +346,9 @@ class SparseConvTranspose3d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseInverseConv2d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -355,7 +367,9 @@ class SparseInverseConv2d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SparseInverseConv3d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -374,7 +388,9 @@ class SparseInverseConv3d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SubMConv2d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -401,7 +417,9 @@ class SubMConv2d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SubMConv3d(SparseConvolution):
+ 
+     def __init__(self,
+@@ -428,7 +446,9 @@ class SubMConv3d(SparseConvolution):
+             indice_key=indice_key)
+ 
+ 
+-@CONV_LAYERS.register_module()
++# RoboGeo: mmcv 1.7.1 also registers these names; force override with the
++# vendored spconv implementations that mmdet3d 0.17.1 expects
++@CONV_LAYERS.register_module(force=True)
+ class SubMConv4d(SparseConvolution):
+ 
+     def __init__(self,
+diff --git a/mmdet3d/ops/spconv/include/spconv/spconv_ops.h b/mmdet3d/ops/spconv/include/spconv/spconv_ops.h
+index c44a501..7f7d99f 100644
+--- a/mmdet3d/ops/spconv/include/spconv/spconv_ops.h
++++ b/mmdet3d/ops/spconv/include/spconv/spconv_ops.h
+@@ -47,7 +47,7 @@ std::vector<torch::Tensor> getIndicePair(
+   for (int i = 1; i < kernelSize.size(); ++i) {
+     kernelVolume *= kernelSize[i];
+   }
+-  TV_ASSERT_RT_ERR(kernelVolume <= 4096, "error");
++  TV_ASSERT_RT_ERR(kernelVolume <= 256, "error");  // RoboGeo: KernelMaxVolume lowered 4096->256 (local-mem OOM on 24GB GPU)
+   auto outputVolume = outSpatialShape[0];
+   for (int i = 1; i < outSpatialShape.size(); ++i) {
+     outputVolume *= outSpatialShape[i];
+@@ -163,7 +163,7 @@ std::vector<torch::Tensor> getIndicePairPreGrid(
+   for (int i = 1; i < kernelSize.size(); ++i) {
+     kernelVolume *= kernelSize[i];
+   }
+-  TV_ASSERT_RT_ERR(kernelVolume <= 4096, "error");
++  TV_ASSERT_RT_ERR(kernelVolume <= 256, "error");  // RoboGeo: KernelMaxVolume lowered 4096->256 (local-mem OOM on 24GB GPU)
+   auto outputVolume = outSpatialShape[0];
+   for (int i = 1; i < outSpatialShape.size(); ++i) {
+     outputVolume *= outSpatialShape[i];
+diff --git a/mmdet3d/ops/spconv/src/indice_cuda.cu b/mmdet3d/ops/spconv/src/indice_cuda.cu
+index b67cca0..5a54986 100644
+--- a/mmdet3d/ops/spconv/src/indice_cuda.cu
++++ b/mmdet3d/ops/spconv/src/indice_cuda.cu
+@@ -44,18 +44,44 @@ struct CreateConvIndicePairFunctorP1<tv::GPU, Index, IndexGrid, NDim> {
+     auto numActIn = indicesIn.dim(0);
+     if (numActIn == 0) return 0;
+     // auto timer = spconv::CudaContextTimer<>();
+-    if (transpose)
+-      prepareDeConvIndicePairsKernel<Index, IndexGrid, NDim, 4096>
+-          <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
+-             d.getStream()>>>(indicesIn, indicesOut, gridsOut, indicePairs,
+-                              indiceNum, indicePairUnique, kernelSize, stride,
+-                              padding, dilation, outSpatialShape);
+-    else
+-      prepareIndicePairsKernel<Index, IndexGrid, NDim, 4096>
+-          <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
+-             d.getStream()>>>(indicesIn, indicesOut, gridsOut, indicePairs,
+-                              indiceNum, indicePairUnique, kernelSize, stride,
+-                              padding, dilation, outSpatialShape);
++    // RoboGeo: KernelMaxVolume was hardcoded to 4096 => 64KB of
++    // local memory per thread; the device-wide local-mem reservation at launch
++    // (~12 GB on a 24 GB GPU) fails with cudaErrorMemoryAllocation. Dispatch on
++    // the actual kernel volume: <=32 (512B/thread) covers every real mmdet3d
++    // model (3x3x3=27); <=256 kept as fallback (guarded in spconv_ops.h).
++    Index kernelVolume = 1;
++    for (int i = 0; i < NDim; ++i) kernelVolume *= kernelSize[i];
++    if (transpose) {
++      if (kernelVolume <= 32)
++        prepareDeConvIndicePairsKernel<Index, IndexGrid, NDim, 32>
++            <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS,
++               0, d.getStream()>>>(indicesIn, indicesOut, gridsOut,
++                                   indicePairs, indiceNum, indicePairUnique,
++                                   kernelSize, stride, padding, dilation,
++                                   outSpatialShape);
++      else
++        prepareDeConvIndicePairsKernel<Index, IndexGrid, NDim, 256>
++            <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS,
++               0, d.getStream()>>>(indicesIn, indicesOut, gridsOut,
++                                   indicePairs, indiceNum, indicePairUnique,
++                                   kernelSize, stride, padding, dilation,
++                                   outSpatialShape);
++    } else {
++      if (kernelVolume <= 32)
++        prepareIndicePairsKernel<Index, IndexGrid, NDim, 32>
++            <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS,
++               0, d.getStream()>>>(indicesIn, indicesOut, gridsOut,
++                                   indicePairs, indiceNum, indicePairUnique,
++                                   kernelSize, stride, padding, dilation,
++                                   outSpatialShape);
++      else
++        prepareIndicePairsKernel<Index, IndexGrid, NDim, 256>
++            <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS,
++               0, d.getStream()>>>(indicesIn, indicesOut, gridsOut,
++                                   indicePairs, indiceNum, indicePairUnique,
++                                   kernelSize, stride, padding, dilation,
++                                   outSpatialShape);
++    }
+     TV_CHECK_CUDA_ERR();
+     // std::cout << "p1 gene time " << timer.report() / 1000.0 << std::endl;
+     return 1;
+@@ -116,11 +142,22 @@ struct CreateSubMIndicePairFunctor<tv::GPU, Index, IndexGrid, NDim> {
+         <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
+            d.getStream()>>>(indicesIn, gridsOut, outSpatialShape);
+     TV_CHECK_CUDA_ERR();
+-    getSubMIndicePairsKernel<Index, IndexGrid, NDim, 4096>
+-        <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
+-           d.getStream()>>>(indicesIn, gridsOut, indicePairs, indiceNum,
+-                            kernelSize, stride, padding, dilation,
+-                            outSpatialShape);
++    // RoboGeo: see CreateConvIndicePairFunctorP1 above — dispatch
++    // on kernel volume instead of the original hardcoded 4096.
++    Index kernelVolume = 1;
++    for (int i = 0; i < NDim; ++i) kernelVolume *= kernelSize[i];
++    if (kernelVolume <= 32)
++      getSubMIndicePairsKernel<Index, IndexGrid, NDim, 32>
++          <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
++             d.getStream()>>>(indicesIn, gridsOut, indicePairs, indiceNum,
++                              kernelSize, stride, padding, dilation,
++                              outSpatialShape);
++    else
++      getSubMIndicePairsKernel<Index, IndexGrid, NDim, 256>
++          <<<tv::launch::getBlocks(numActIn), tv::launch::CUDA_NUM_THREADS, 0,
++             d.getStream()>>>(indicesIn, gridsOut, indicePairs, indiceNum,
++                              kernelSize, stride, padding, dilation,
++                              outSpatialShape);
+     TV_CHECK_CUDA_ERR();
+     // std::cout << "subm gene time " << timer.report() / 1000.0 << std::endl;
+     if (resetGrid) {
+diff --git a/setup.py b/setup.py
+index 28ec46c..b6e1af2 100644
+--- a/setup.py
++++ b/setup.py
+@@ -241,7 +241,8 @@ if __name__ == '__main__':
+                     'src/maxpool.cc',
+                     'src/maxpool_cuda.cu',
+                 ],
+-                extra_args=['-w', '-std=c++14']),
++                # RoboGeo: torch>=2.1 headers require C++17
++                extra_args=['-w', '-std=c++17']),
+             make_cuda_ext(
+                 name='iou3d_cuda',
+                 module='mmdet3d.ops.iou3d',

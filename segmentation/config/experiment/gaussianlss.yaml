@@ -1,0 +1,21 @@
+# @package _global_
+# python -m bevunify.train +experiment=gaussianlss
+defaults:
+  - override /model: gaussianlss
+  - override /gt: seg_center_offset
+  - override /loss: seg_center_offset
+  - override /recipe: gaussianlss
+
+data:
+  split_intrin_extrin: False         # GaussianLSS reads lidar2img
+
+# Channel slices of the head output.
+model:
+  head:
+    outputs:
+      vehicle: [0, 1]
+      vehicle_center: [1, 2]
+      vehicle_offset: [2, 4]
+
+experiment:
+  project: gaussianlss

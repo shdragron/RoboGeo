@@ -1,0 +1,5 @@
+# @package data
+# Vehicle mask, center heatmap and visibility (CVT loss).
+gt_center: true
+gt_offset: false
+gt_visibility: true

@@ -1,0 +1,5 @@
+# @package data
+# Vehicle mask, center heatmap, center offset and visibility (GaussianLSS loss).
+gt_center: true
+gt_offset: true
+gt_visibility: true

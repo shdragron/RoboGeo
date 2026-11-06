@@ -1,0 +1,141 @@
+--- a/mmdet3d/apis/inference.py
++++ b/mmdet3d/apis/inference.py
+@@ -385,7 +385,7 @@
+         # generate random color map
+         max_idx = pred_seg.max()
+         palette = np.random.randint(0, 256, size=(max_idx + 1, 3))
+-    palette = np.array(palette).astype(np.int)
++    palette = np.array(palette).astype(int)
+ 
+     show_seg_result(
+         points,
+--- a/mmdet3d/core/evaluation/instance_seg_eval.py
++++ b/mmdet3d/core/evaluation/instance_seg_eval.py
+@@ -29,7 +29,7 @@
+             # match pred_instance['filename'] from assign_instances_for_scan
+             file_name = f'{id}_{i}'
+             info[file_name] = dict()
+-            info[file_name]['mask'] = (mask == i).astype(np.int)
++            info[file_name]['mask'] = (mask == i).astype(int)
+             info[file_name]['label_id'] = valid_class_ids[label[i]]
+             info[file_name]['conf'] = score[i]
+         infos.append(info)
+--- a/mmdet3d/core/evaluation/scannet_utils/evaluate_semantic_instance.py
++++ b/mmdet3d/core/evaluation/scannet_utils/evaluate_semantic_instance.py
+@@ -26,7 +26,7 @@
+ 
+     # results: class x overlap
+     ap = np.zeros((len(dist_threshes), len(class_labels), len(overlaps)),
+-                  np.float)
++                  float)
+     for di, (min_region_size, distance_thresh, distance_conf) in enumerate(
+             zip(min_region_sizes, dist_threshes, dist_confs)):
+         for oi, overlap_th in enumerate(overlaps):
+@@ -59,7 +59,7 @@
+ 
+                     cur_true = np.ones(len(gt_instances))
+                     cur_score = np.ones(len(gt_instances)) * (-float('inf'))
+-                    cur_match = np.zeros(len(gt_instances), dtype=np.bool)
++                    cur_match = np.zeros(len(gt_instances), dtype=bool)
+                     # collect matches
+                     for (gti, gt) in enumerate(gt_instances):
+                         found_match = False
+--- a/mmdet3d/core/evaluation/seg_eval.py
++++ b/mmdet3d/core/evaluation/seg_eval.py
+@@ -88,8 +88,8 @@
+ 
+     hist_list = []
+     for i in range(len(gt_labels)):
+-        gt_seg = gt_labels[i].clone().numpy().astype(np.int)
+-        pred_seg = seg_preds[i].clone().numpy().astype(np.int)
++        gt_seg = gt_labels[i].clone().numpy().astype(int)
++        pred_seg = seg_preds[i].clone().numpy().astype(int)
+ 
+         # filter out ignored points
+         pred_seg[gt_seg == ignore_index] = -1
+--- a/mmdet3d/core/visualizer/image_vis.py
++++ b/mmdet3d/core/visualizer/image_vis.py
+@@ -77,7 +77,7 @@
+     line_indices = ((0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (3, 2), (3, 7),
+                     (4, 5), (4, 7), (2, 6), (5, 6), (6, 7))
+     for i in range(num_rects):
+-        corners = rect_corners[i].astype(np.int)
++        corners = rect_corners[i].astype(int)
+         for start, end in line_indices:
+             cv2.line(img, (corners[start, 0], corners[start, 1]),
+                      (corners[end, 0], corners[end, 1]), color, thickness,
+--- a/mmdet3d/core/visualizer/open3d_vis.py
++++ b/mmdet3d/core/visualizer/open3d_vis.py
+@@ -252,7 +252,7 @@
+ 
+         # change the color of points which are in box
+         if pcd is not None and mode == 'xyz':
+-            points_colors[indices[:, i].astype(np.bool)] = in_box_color
++            points_colors[indices[:, i].astype(bool)] = in_box_color
+ 
+     # update points colors
+     if pcd is not None:
+--- a/mmdet3d/datasets/pipelines/dbsampler.py
++++ b/mmdet3d/datasets/pipelines/dbsampler.py
+@@ -287,7 +287,7 @@
+                 s_points_list.append(s_points)
+ 
+             gt_labels = np.array([self.cat2label[s['name']] for s in sampled],
+-                                 dtype=np.long)
++                                 dtype=int)
+ 
+             if ground_plane is not None:
+                 xyz = sampled_gt_bboxes[:, :3]
+--- a/mmdet3d/datasets/pipelines/loading.py
++++ b/mmdet3d/datasets/pipelines/loading.py
+@@ -269,7 +269,7 @@
+         # build cat_id to class index mapping
+         neg_cls = len(valid_cat_ids)
+         self.cat_id2class = np.ones(
+-            self.max_cat_id + 1, dtype=np.int) * neg_cls
++            self.max_cat_id + 1, dtype=int) * neg_cls
+         for cls_idx, cat_id in enumerate(valid_cat_ids):
+             self.cat_id2class[cat_id] = cls_idx
+ 
+--- a/mmdet3d/datasets/pipelines/transforms_3d.py
++++ b/mmdet3d/datasets/pipelines/transforms_3d.py
+@@ -922,7 +922,7 @@
+         # using mask to index gt_labels_3d will cause bug when
+         # len(gt_labels_3d) == 1, where mask=1 will be interpreted
+         # as gt_labels_3d[1] and cause out of index error
+-        gt_labels_3d = gt_labels_3d[mask.numpy().astype(np.bool)]
++        gt_labels_3d = gt_labels_3d[mask.numpy().astype(bool)]
+ 
+         # limit rad to [-pi, pi]
+         gt_bboxes_3d.limit_yaw(offset=0.5, period=2 * np.pi)
+--- a/mmdet3d/datasets/scannet_dataset.py
++++ b/mmdet3d/datasets/scannet_dataset.py
+@@ -448,7 +448,7 @@
+         mmcv.mkdir_or_exist(txtfile_prefix)
+ 
+         # need to map network output to original label idx
+-        pred2label = np.zeros(len(self.VALID_CLASS_IDS)).astype(np.int)
++        pred2label = np.zeros(len(self.VALID_CLASS_IDS)).astype(int)
+         for original_label, output_idx in self.label_map.items():
+             if output_idx != self.ignore_index:
+                 pred2label[output_idx] = original_label
+@@ -457,7 +457,7 @@
+         for i, result in enumerate(results):
+             info = self.data_infos[i]
+             sample_idx = info['point_cloud']['lidar_idx']
+-            pred_sem_mask = result['semantic_mask'].numpy().astype(np.int)
++            pred_sem_mask = result['semantic_mask'].numpy().astype(int)
+             pred_label = pred2label[pred_sem_mask]
+             curr_file = f'{txtfile_prefix}/{sample_idx}.txt'
+             np.savetxt(curr_file, pred_label, fmt='%d')
+--- a/mmdet3d/__init__.py
++++ b/mmdet3d/__init__.py
+@@ -19,7 +19,7 @@
+ 
+ 
+ mmcv_minimum_version = '1.5.2'
+-mmcv_maximum_version = '1.7.0'
++mmcv_maximum_version = '1.7.2'
+ mmcv_version = digit_version(mmcv.__version__)
+ 
+ 

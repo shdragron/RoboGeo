@@ -1,0 +1,14 @@
+# CVT loss: focal segmentation + focal center heatmap, both on logits.
+center_weight: 0.1
+center:
+  _target_: bevunify.losses.FocalCenterLoss
+  min_visibility: ${min_visibility}
+  alpha: -1.0
+  gamma: 2.0
+  key: ${key}
+
+bev_weight: 1.0
+bev:
+  _target_: GaussianLSS.losses.BinarySegmentationLoss
+  min_visibility: ${min_visibility}
+  key: ${key}

@@ -1,0 +1,13 @@
+# @package _global_
+# python -m bevunify.train +experiment=cvt
+defaults:
+  - override /model: cvt
+  - override /gt: seg_center
+  - override /loss: seg_focal_center
+  - override /recipe: cvt
+
+data:
+  split_intrin_extrin: True          # CVT reads intrinsics and extrinsics
+
+experiment:
+  project: cvt

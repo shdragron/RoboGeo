@@ -1,0 +1,166 @@
+diff -ru a/mmcv/ops/csrc/pytorch/cuda/cudabind.cpp b/mmcv/ops/csrc/pytorch/cuda/cudabind.cpp
+--- a/mmcv/ops/csrc/pytorch/cuda/cudabind.cpp
++++ b/mmcv/ops/csrc/pytorch/cuda/cudabind.cpp
+@@ -512,18 +512,6 @@
+ REGISTER_DEVICE_IMPL(furthest_point_sampling_with_dist_forward_impl, CUDA,
+                      furthest_point_sampling_with_dist_forward_cuda);
+ 
+-torch::Tensor fused_bias_leakyrelu_op(const torch::Tensor& input,
+-                                      const torch::Tensor& bias,
+-                                      const torch::Tensor& refer, int act,
+-                                      int grad, float alpha, float scale);
+-
+-torch::Tensor fused_bias_leakyrelu_op_impl(const torch::Tensor& input,
+-                                           const torch::Tensor& bias,
+-                                           const torch::Tensor& refer, int act,
+-                                           int grad, float alpha, float scale);
+-REGISTER_DEVICE_IMPL(fused_bias_leakyrelu_op_impl, CUDA,
+-                     fused_bias_leakyrelu_op);
+-
+ void GatherPointsForwardCUDAKernelLauncher(int b, int c, int n, int npoints,
+                                            const Tensor points,
+                                            const Tensor idx, Tensor out);
+@@ -1443,17 +1431,6 @@
+ REGISTER_DEVICE_IMPL(tin_shift_forward_impl, CUDA, tin_shift_forward_cuda);
+ REGISTER_DEVICE_IMPL(tin_shift_backward_impl, CUDA, tin_shift_backward_cuda);
+ 
+-torch::Tensor upfirdn2d_op(const torch::Tensor& input,
+-                           const torch::Tensor& kernel, int up_x, int up_y,
+-                           int down_x, int down_y, int pad_x0, int pad_x1,
+-                           int pad_y0, int pad_y1);
+-
+-torch::Tensor upfirdn2d_op_impl(const torch::Tensor& input,
+-                                const torch::Tensor& kernel, int up_x, int up_y,
+-                                int down_x, int down_y, int pad_x0, int pad_x1,
+-                                int pad_y0, int pad_y1);
+-REGISTER_DEVICE_IMPL(upfirdn2d_op_impl, CUDA, upfirdn2d_op);
+-
+ int HardVoxelizeForwardCUDAKernelLauncher(
+     const at::Tensor& points, at::Tensor& voxels, at::Tensor& coors,
+     at::Tensor& num_points_per_voxel, const std::vector<float> voxel_size,
+diff -ru a/mmcv/ops/csrc/pytorch/cuda/ms_deform_attn_cuda.cu b/mmcv/ops/csrc/pytorch/cuda/ms_deform_attn_cuda.cu
+--- a/mmcv/ops/csrc/pytorch/cuda/ms_deform_attn_cuda.cu
++++ b/mmcv/ops/csrc/pytorch/cuda/ms_deform_attn_cuda.cu
+@@ -14,7 +14,8 @@
+ #include <cuda.h>
+ #include <cuda_runtime.h>
+ 
+-#include <THC/THCAtomics.cuh>
++// RoboGeo: THC was removed in torch>=1.13; atomics moved to ATen
++#include <ATen/cuda/Atomic.cuh>
+ #include <vector>
+ 
+ #include "ms_deform_attn_cuda_kernel.cuh"
+diff -ru a/mmcv/ops/csrc/pytorch/pybind.cpp b/mmcv/ops/csrc/pytorch/pybind.cpp
+--- a/mmcv/ops/csrc/pytorch/pybind.cpp
++++ b/mmcv/ops/csrc/pytorch/pybind.cpp
+@@ -312,14 +312,6 @@
+                    const Tensor dets_sorted, const float iou_threshold,
+                    const int multi_label);
+ 
+-Tensor upfirdn2d(const Tensor &input, const Tensor &kernel, int up_x, int up_y,
+-                 int down_x, int down_y, int pad_x0, int pad_x1, int pad_y0,
+-                 int pad_y1);
+-
+-Tensor fused_bias_leakyrelu(const Tensor &input, const Tensor &bias,
+-                            const Tensor &refer, int act, int grad, float alpha,
+-                            float scale);
+-
+ void roi_align_rotated_forward(Tensor input, Tensor rois, Tensor output,
+                                int pooled_height, int pooled_width,
+                                float spatial_scale, int sampling_ratio,
+@@ -447,14 +439,6 @@
+                   const int multi_label);
+ 
+ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+-  m.def("upfirdn2d", &upfirdn2d, "upfirdn2d (CUDA)", py::arg("input"),
+-        py::arg("kernel"), py::arg("up_x"), py::arg("up_y"), py::arg("down_x"),
+-        py::arg("down_y"), py::arg("pad_x0"), py::arg("pad_x1"),
+-        py::arg("pad_y0"), py::arg("pad_y1"));
+-  m.def("fused_bias_leakyrelu", &fused_bias_leakyrelu,
+-        "fused_bias_leakyrelu (CUDA)", py::arg("input"), py::arg("bias"),
+-        py::arg("empty"), py::arg("act"), py::arg("grad"), py::arg("alpha"),
+-        py::arg("scale"));
+   m.def("gather_points_forward", &gather_points_forward,
+         "gather_points_forward", py::arg("points_tensor"),
+         py::arg("idx_tensor"), py::arg("out_tensor"), py::arg("b"),
+diff -ru a/mmcv/ops/__init__.py b/mmcv/ops/__init__.py
+--- a/mmcv/ops/__init__.py
++++ b/mmcv/ops/__init__.py
+@@ -26,7 +26,6 @@
+                          sigmoid_focal_loss, softmax_focal_loss)
+ from .furthest_point_sample import (furthest_point_sample,
+                                     furthest_point_sample_with_dist)
+-from .fused_bias_leakyrelu import FusedBiasLeakyReLU, fused_bias_leakyrelu
+ from .gather_points import gather_points
+ from .group_points import GroupAll, QueryAndGroup, grouping_operation
+ from .info import (get_compiler_version, get_compiling_cuda_version,
+@@ -69,7 +68,6 @@
+ from .three_interpolate import three_interpolate
+ from .three_nn import three_nn
+ from .tin_shift import TINShift, tin_shift
+-from .upfirdn2d import upfirdn2d
+ from .voxelize import Voxelization, voxelization
+ 
+ __all__ = [
+@@ -87,8 +85,7 @@
+     'point_sample', 'rel_roi_point_to_rel_img_point', 'SimpleRoIAlign',
+     'SAConv2d', 'TINShift', 'tin_shift', 'assign_score_withk',
+     'box_iou_rotated', 'box_iou_quadri', 'RoIPointPool3d', 'nms_rotated',
+-    'knn', 'ball_query', 'upfirdn2d', 'FusedBiasLeakyReLU',
+-    'fused_bias_leakyrelu', 'rotated_feature_align', 'RiRoIAlignRotated',
++    'knn', 'ball_query', 'rotated_feature_align', 'RiRoIAlignRotated',
+     'riroi_align_rotated', 'RoIAlignRotated', 'roi_align_rotated',
+     'pixel_group', 'QueryAndGroup', 'GroupAll', 'grouping_operation',
+     'contour_expand', 'three_nn', 'three_interpolate',
+diff -ru a/mmcv/parallel/distributed.py b/mmcv/parallel/distributed.py
+--- a/mmcv/parallel/distributed.py
++++ b/mmcv/parallel/distributed.py
+@@ -156,8 +156,9 @@
+         Returns:
+             Any: Forward result of :attr:`module`.
+         """
+-        module_to_run = self._replicated_tensor_module if \
+-            self._use_replicated_tensor_module else self.module
++        # RoboGeo: torch 2.x removed DDP's experimental replicated-tensor
++        # module (_use_replicated_tensor_module); always run self.module.
++        module_to_run = self.module
+ 
+         if self.device_ids:
+             inputs, kwargs = self.to_kwargs(  # type: ignore
+diff -ru a/mmcv/parallel/_functions.py b/mmcv/parallel/_functions.py
+--- a/mmcv/parallel/_functions.py
++++ b/mmcv/parallel/_functions.py
+@@ -72,7 +72,8 @@
+         streams = None
+         if input_device == -1 and target_gpus != [-1]:
+             # Perform CPU to GPU copies in a background stream
+-            streams = [_get_stream(device) for device in target_gpus]
++            # RoboGeo: torch 2.x _get_stream expects a torch.device
++            streams = [_get_stream(torch.device("cuda", device) if isinstance(device, int) else device) for device in target_gpus]
+ 
+         outputs = scatter(input, target_gpus, streams)
+         # Synchronize with the copy stream
+diff -ru a/setup.py b/setup.py
+--- a/setup.py
++++ b/setup.py
+@@ -266,7 +266,8 @@
+         # to compile those cpp files, so there is no need to add the
+         # argument
+         if platform.system() != 'Windows':
+-            extra_compile_args['cxx'] = ['-std=c++14']
++            # RoboGeo: torch>=2.1 headers require C++17
++            extra_compile_args['cxx'] = ['-std=c++17']
+ 
+         include_dirs = []
+ 
+@@ -364,7 +365,8 @@
+         # to compile those cpp files, so there is no need to add the
+         # argument
+         if 'nvcc' in extra_compile_args and platform.system() != 'Windows':
+-            extra_compile_args['nvcc'] += ['-std=c++14']
++            # RoboGeo: torch>=2.1 headers require C++17
++            extra_compile_args['nvcc'] += ['-std=c++17']
+ 
+         ext_ops = extension(
+             name=ext_name,

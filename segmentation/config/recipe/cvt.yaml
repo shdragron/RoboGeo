@@ -1,0 +1,18 @@
+# @package _global_
+# CVT recipe (upstream optimizer and schedule): AdamW + OneCycleLR with cosine annealing,
+# 30 epochs. The cycle spans the whole run (trainer.estimated_stepping_batches).
+optimizer:
+  lr: 4e-3
+  weight_decay: 1e-7
+scheduler:
+  div_factor: 10
+  pct_start: 0.3
+  final_div_factor: 10
+  max_lr: ${optimizer.lr}
+  total_steps: ${trainer.max_steps}
+  cycle_momentum: False
+  anneal_strategy: cos
+  interval: step
+trainer:
+  max_steps: -1
+  max_epochs: 30

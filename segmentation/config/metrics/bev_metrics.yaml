@@ -1,0 +1,12 @@
+# Validation IoU@0.5 at vis>=2 and over all cells; their mean is logged as val/metrics/mIoU.
+iou_vis2:
+  _target_: bevunify.metrics.IoUMetricCfg
+  min_visibility: 2
+  key: ${key}
+  thresholds: [0.5]
+
+iou_visall:
+  _target_: bevunify.metrics.IoUMetricCfg
+  min_visibility: 0
+  key: ${key}
+  thresholds: [0.5]
