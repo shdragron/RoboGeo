@@ -2,11 +2,9 @@
 
 ## Dataset
 
-1. Request access on the [dataset page](https://huggingface.co/datasets/shdragron/RoboGeo).
-2. Download it (843 GB in total):
+1. Download the [dataset](https://huggingface.co/datasets/shdragron/RoboGeo) (843 GB in total):
 
    ```bash
-   hf auth login
    hf download shdragron/RoboGeo --repo-type dataset --local-dir robogeo_download
    ```
 
@@ -20,7 +18,7 @@
    To skip a part, list the ones you need, e.g.
    `--include "metadata/*" "platform_layouts/*" "bev_segmentation_labels/*"`.
 
-3. Extract into one folder and point `ROBOGEO_DATA` to it:
+2. Extract into one folder and point `ROBOGEO_DATA` to it:
 
    ```bash
    export ROBOGEO_DATA=/path/to/robogeo
@@ -41,7 +39,7 @@
    └── carla_geobev_labels/   # {sedan,suv,bus}/ (training), {sedan,suv,bus}_eval/ (evaluation)
    ```
 
-4. The detection info files use the mmdet3d path `data/nuscenes/...`. Link the data into each
+3. The detection info files use the mmdet3d path `data/nuscenes/...`. Link the data into each
    detection folder:
 
    ```bash
